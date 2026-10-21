@@ -27,6 +27,16 @@ export {
 } from '@nightpost/js';
 export type { HotspotLike, MonitorSpan, MonitorTrace, TreeNode } from '@nightpost/js';
 
+// The V8 profiler surface the reference wiring imported from its local
+// monitor-profile module — re-exported so a host imports one module.
+export {
+	buildV8Tree,
+	collapseNodes,
+	startV8Profile,
+	stopV8Profile
+} from '@nightpost/js';
+export type { V8Profile } from '@nightpost/js';
+
 export function monitorEnabled(): boolean {
 	return monitorEnabledCore(env);
 }

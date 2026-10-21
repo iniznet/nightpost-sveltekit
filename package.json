@@ -13,7 +13,7 @@
     "check": "tsc --noEmit"
   },
   "dependencies": {
-    "@nightpost/js": "github:iniznet/nightpost-js"
+    "@nightpost/js": "github:iniznet/nightpost-js#semver:^0.1.0"
   },
   "peerDependencies": {
     "@sveltejs/kit": "^2.0"
