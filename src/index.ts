@@ -111,7 +111,7 @@ let releaseReported = false;
  * the same opt-in as every other sender — inert without a URL. The version
  * string is host-specific (git sha), so the caller supplies it.
  */
-export function reportReleaseOnce(version: string): void {
+export function reportReleaseOnce(version?: string | null): void {
 	if (releaseReported || !monitorEnabled() || !version) return;
 	releaseReported = true;
 	post(env, `/ingest/${env.NIGHTPOST_PROJECT_KEY ?? env.MONITOR_PROJECT_KEY ?? 'front'}/release`, {
