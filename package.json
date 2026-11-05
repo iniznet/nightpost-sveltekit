@@ -1,6 +1,6 @@
 {
   "name": "@nightpost/sveltekit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "SvelteKit adapter for the Nightpost reporter: sampled request profiles, error reports, deploy markers and cross-service trace context.",
   "license": "MIT",
   "type": "module",
@@ -13,7 +13,7 @@
     "check": "tsc --noEmit"
   },
   "dependencies": {
-    "@nightpost/js": "github:iniznet/nightpost-js#semver:^0.1.0"
+    "@nightpost/js": "github:iniznet/nightpost-js#semver:^0.2.0"
   },
   "peerDependencies": {
     "@sveltejs/kit": "^2.0"

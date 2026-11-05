@@ -4,7 +4,8 @@
  * Thin by contract: reads the app's dynamic private env, keeps the exact
  * helper names the reference wiring used (src/lib/server/monitor.ts, #145),
  * and delegates everything to @nightpost/js. Inert without a URL — nothing
- * here ever blocks or breaks a request.
+ * here ever blocks or breaks a request. The project key reads
+ * NIGHTPOST_PROJECT_KEY only (iniznet/fenrirealm-tracker#564).
  */
 import { env } from '$env/dynamic/private';
 import type { RequestEvent } from '@sveltejs/kit';
@@ -88,13 +89,13 @@ export function reportProfile(
 	if (tree && tree.length > 0) {
 		payload.tree = tree;
 	}
-	post(env, `/ingest/${env.NIGHTPOST_PROJECT_KEY ?? env.MONITOR_PROJECT_KEY ?? 'front'}/profile`, payload);
+	post(env, `/ingest/${env.NIGHTPOST_PROJECT_KEY ?? 'front'}/profile`, payload);
 }
 
 export function reportError(event: RequestEvent | undefined, err: unknown): void {
 	const message = err instanceof Error ? err.message : String(err);
 	const stack = err instanceof Error ? (err.stack ?? '') : '';
-	post(env, `/ingest/${env.NIGHTPOST_PROJECT_KEY ?? env.MONITOR_PROJECT_KEY ?? 'front'}/error`, {
+	post(env, `/ingest/${env.NIGHTPOST_PROJECT_KEY ?? 'front'}/error`, {
 		message,
 		stack,
 		url: event?.url.toString() ?? '',
@@ -114,7 +115,7 @@ let releaseReported = false;
 export function reportReleaseOnce(version?: string | null): void {
 	if (releaseReported || !monitorEnabled() || !version) return;
 	releaseReported = true;
-	post(env, `/ingest/${env.NIGHTPOST_PROJECT_KEY ?? env.MONITOR_PROJECT_KEY ?? 'front'}/release`, {
+	post(env, `/ingest/${env.NIGHTPOST_PROJECT_KEY ?? 'front'}/release`, {
 		version,
 		environment: env.APP_ENV ?? 'production'
 	});
