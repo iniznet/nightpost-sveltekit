@@ -6,17 +6,17 @@
  * and delegates everything to @nightpost/js. Inert without a URL — nothing
  * here ever blocks or breaks a request. The project key reads
  * NIGHTPOST_PROJECT_KEY only (iniznet/fenrirealm-tracker#564).
+ *
+ * The journey half (root render span, relayed fetch spans, traceparent, session
+ * beacon) lives in the `handle`/`handleError` hooks; see WIRE_SPEC.md v2.
  */
 import { env } from '$env/dynamic/private';
-import type { RequestEvent } from '@sveltejs/kit';
 import {
 	forcedDeepAllowed as forcedDeepAllowedCore,
 	monitorEnabled as monitorEnabledCore,
-	post,
 	shouldProfile as shouldProfileCore,
 	shouldSample as shouldSampleCore
 } from '@nightpost/js';
-import type { HotspotLike, MonitorTrace, TreeNode } from '@nightpost/js';
 
 export {
 	currentTrace,
@@ -38,6 +38,34 @@ export {
 } from '@nightpost/js';
 export type { V8Profile } from '@nightpost/js';
 
+// The journey contract (WIRE_SPEC.md v2).
+export { createHandle, createHandleError, handle, handleError, SESSION_COOKIE } from './hooks.js';
+export type { HandleOptions } from './hooks.js';
+export { normaliseRoute } from './route-pattern.js';
+export {
+	adoptTraceparent,
+	elapsedMs,
+	formatTraceparent,
+	journeyFor,
+	mintSpanId,
+	mintTraceContext,
+	relativeStartMs,
+	relaySpan,
+	roundMs,
+	startJourney
+} from './journey.js';
+export type {
+	JourneySpan,
+	JourneyStart,
+	RelayStart,
+	RequestJourney,
+	SpanKind,
+	SpanStatus
+} from './journey.js';
+export { reportError, reportProfile, reportReleaseOnce, reportSession, requestRoute } from './report.js';
+export type { SessionStatus } from './report.js';
+export { environmentName, projectKey, serviceName } from './config.js';
+
 export function monitorEnabled(): boolean {
 	return monitorEnabledCore(env);
 }
@@ -52,71 +80,4 @@ export function shouldProfile(): boolean {
 
 export function forcedDeepAllowed(): boolean {
 	return forcedDeepAllowedCore(env);
-}
-
-export function reportProfile(
-	event: RequestEvent,
-	durationMs: number,
-	status: number,
-	hotspots?: HotspotLike[],
-	trace?: MonitorTrace,
-	tree?: TreeNode[]
-): void {
-	const route = event.route?.id ?? event.url.pathname;
-	const rounded = Math.round(durationMs * 100) / 100;
-	const payload: Record<string, unknown> = {
-		name: `${event.request.method} ${route}`,
-		duration_ms: rounded,
-		type: hotspots?.length ? 'callgraph' : 'request',
-		environment: env.APP_ENV ?? 'production',
-		spans: [
-			{
-				name: 'request',
-				duration_ms: rounded,
-				tags: {
-					status,
-					route,
-					memory_rss_mb: Math.round((process.memoryUsage().rss / 1048576) * 100) / 100
-				}
-			},
-			...(trace?.spans ?? [])
-		],
-		hotspots
-	};
-	if (trace) {
-		payload.trace_id = trace.id;
-	}
-	if (tree && tree.length > 0) {
-		payload.tree = tree;
-	}
-	post(env, `/ingest/${env.NIGHTPOST_PROJECT_KEY ?? 'front'}/profile`, payload);
-}
-
-export function reportError(event: RequestEvent | undefined, err: unknown): void {
-	const message = err instanceof Error ? err.message : String(err);
-	const stack = err instanceof Error ? (err.stack ?? '') : '';
-	post(env, `/ingest/${env.NIGHTPOST_PROJECT_KEY ?? 'front'}/error`, {
-		message,
-		stack,
-		url: event?.url.toString() ?? '',
-		route: event?.route?.id ?? '',
-		environment: env.APP_ENV ?? 'production'
-	});
-}
-
-let releaseReported = false;
-
-/**
- * One deploy marker per SSR process (#158): powers the monitor's
- * "new since release" badges and the sampled crash-free estimate. Tied to
- * the same opt-in as every other sender — inert without a URL. The version
- * string is host-specific (git sha), so the caller supplies it.
- */
-export function reportReleaseOnce(version?: string | null): void {
-	if (releaseReported || !monitorEnabled() || !version) return;
-	releaseReported = true;
-	post(env, `/ingest/${env.NIGHTPOST_PROJECT_KEY ?? 'front'}/release`, {
-		version,
-		environment: env.APP_ENV ?? 'production'
-	});
 }
