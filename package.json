@@ -10,6 +10,7 @@
     ".": "./src/index.ts"
   },
   "scripts": {
+    "test": "node --test test/journey.test.ts test/route-pattern.test.ts",
     "check": "tsc --noEmit"
   },
   "dependencies": {
